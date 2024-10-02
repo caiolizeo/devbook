@@ -10,7 +10,6 @@ import (
 
 func main() {
 	config.Load()
-	fmt.Println(config.ConnectionUrl)
 	r := router.Create()
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), r))
