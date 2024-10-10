@@ -101,3 +101,27 @@ func (repo users) FindByID(id uint64) (models.User, error) {
 
 	return user, nil
 }
+
+func (repo users) Update(id uint64, user models.User) error {
+	statement, err := repo.db.Prepare(`
+		UPDATE users SET 
+		name = ?, 
+		nickname = ?,
+		email = ?
+		WHERE id = ?`,
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(
+		user.Name,
+		user.NickName,
+		user.Email,
+		id,
+	); err != nil {
+		return err
+	}
+	return nil
+}

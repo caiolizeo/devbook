@@ -16,8 +16,8 @@ type User struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
-func (user *User) Prepare() error {
-	if err := user.validate(); err != nil {
+func (user *User) Prepare(step string) error {
+	if err := user.validate(step); err != nil {
 		return err
 	}
 
@@ -25,12 +25,13 @@ func (user *User) Prepare() error {
 	return nil
 }
 
-func (user *User) validate() error {
+func (user *User) validate(step string) error {
 	userValues := reflect.ValueOf(user).Elem()
 	userFields := reflect.TypeOf(User{})
 	for i := range userValues.NumField() {
 		if reflect.DeepEqual(userValues.Field(i).Interface(), reflect.Zero(userValues.Field(i).Type()).Interface()) &&
-			(userFields.Field(i).Name != "Id" && userFields.Field(i).Name != "CreatedAt") {
+			(userFields.Field(i).Name != "Id" && userFields.Field(i).Name != "CreatedAt") &&
+			(step == "register" && userFields.Field(i).Name == "Password") {
 			return fmt.Errorf("o campo %s é obrigatório e não pode ficar em branco", strings.ToLower(userFields.Field(i).Name))
 		}
 	}
