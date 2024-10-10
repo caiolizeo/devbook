@@ -3,6 +3,7 @@ package repositories
 import (
 	"api/src/models"
 	"database/sql"
+	"fmt"
 )
 
 type users struct {
@@ -14,7 +15,10 @@ func NewRepoOfUsers(db *sql.DB) *users {
 }
 
 func (repo users) Create(user models.User) (uint64, error) {
-	statement, err := repo.db.Prepare("insert into users(name, nickname, email, password) values(?, ?, ?, ?)")
+	statement, err := repo.db.Prepare(`
+		INSERT INTO users (name, nickname, email, password)
+		VALUES (?, ?, ?, ?)`,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -30,4 +34,40 @@ func (repo users) Create(user models.User) (uint64, error) {
 	}
 
 	return uint64(lastInsertId), nil
+}
+
+func (repo users) Find(nameOrNickname string) ([]models.User, error) {
+	nameOrNickname = fmt.Sprintf("%%%s%%", nameOrNickname)
+
+	lines, err := repo.db.Query(`
+		SELECT id, name, nickname, email, createdAt
+		FROM users
+		WHERE name LIKE ? OR nickname LIKE ?`,
+		nameOrNickname,
+		nameOrNickname,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer lines.Close()
+
+	var users []models.User
+
+	for lines.Next() {
+		var user models.User
+
+		if err = lines.Scan(
+			&user.Id,
+			&user.Name,
+			&user.NickName,
+			&user.Email,
+			&user.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
