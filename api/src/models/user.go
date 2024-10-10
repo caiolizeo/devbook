@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -32,8 +31,7 @@ func (user *User) validate() error {
 	for i := range userValues.NumField() {
 		if reflect.DeepEqual(userValues.Field(i).Interface(), reflect.Zero(userValues.Field(i).Type()).Interface()) &&
 			(userFields.Field(i).Name != "Id" && userFields.Field(i).Name != "CreatedAt") {
-			message := fmt.Sprintf("O campo %s é obrigatório e não pode ficar em branco", userFields.Field(i).Name)
-			return errors.New(message)
+			return fmt.Errorf("o campo %s é obrigatório e não pode ficar em branco", strings.ToLower(userFields.Field(i).Name))
 		}
 	}
 

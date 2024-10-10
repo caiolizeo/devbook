@@ -71,3 +71,33 @@ func (repo users) Find(nameOrNickname string) ([]models.User, error) {
 
 	return users, nil
 }
+
+func (repo users) FindByID(id uint64) (models.User, error) {
+
+	line, err := repo.db.Query(`
+		SELECT id, name, nickname, email, createdAt
+		FROM users
+		WHERE id = ?`,
+		id,
+	)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer line.Close()
+
+	var user models.User
+
+	if line.Next() {
+		if err = line.Scan(
+			&user.Id,
+			&user.Name,
+			&user.NickName,
+			&user.Email,
+			&user.CreatedAt,
+		); err != nil {
+			return models.User{}, err
+		}
+	}
+
+	return user, nil
+}
