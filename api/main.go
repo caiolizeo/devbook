@@ -11,6 +11,5 @@ import (
 func main() {
 	config.Load()
 	r := router.Create()
-
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), r))
 }

@@ -1,10 +1,14 @@
 package models
 
 import (
+	"api/src/security"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/badoux/checkmail"
 )
 
 type User struct {
@@ -21,26 +25,52 @@ func (user *User) Prepare(step string) error {
 		return err
 	}
 
-	user.Format()
-	return nil
-}
-
-func (user *User) validate(step string) error {
-	userValues := reflect.ValueOf(user).Elem()
-	userFields := reflect.TypeOf(User{})
-	for i := range userValues.NumField() {
-		if reflect.DeepEqual(userValues.Field(i).Interface(), reflect.Zero(userValues.Field(i).Type()).Interface()) &&
-			(userFields.Field(i).Name != "Id" && userFields.Field(i).Name != "CreatedAt") &&
-			(step == "register" && userFields.Field(i).Name == "Password") {
-			return fmt.Errorf("o campo %s é obrigatório e não pode ficar em branco", strings.ToLower(userFields.Field(i).Name))
-		}
+	if err := user.Format(step); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (user *User) Format() {
+func (user *User) validate(step string) error {
+	userValues := reflect.ValueOf(user).Elem()
+	userFields := reflect.TypeOf(*user)
+
+	for i := 0; i < userValues.NumField(); i++ {
+		fieldValue := userValues.Field(i)
+		fieldType := userFields.Field(i)
+
+		if reflect.DeepEqual(fieldValue.Interface(), reflect.Zero(fieldValue.Type()).Interface()) &&
+			fieldType.Name != "Id" && fieldType.Name != "CreatedAt" {
+
+			if step != "register" && fieldType.Name == "Password" {
+				continue
+			}
+
+			return fmt.Errorf("o campo %s é obrigatório e não pode ficar em branco", strings.ToLower(fieldType.Name))
+		}
+	}
+
+	if err := checkmail.ValidateFormat(user.Email); err != nil {
+		return errors.New("o e-mail inserido é inválido")
+	}
+
+	return nil
+}
+
+func (user *User) Format(step string) error {
 	user.Name = strings.TrimSpace(user.Name)
 	user.NickName = strings.TrimSpace(user.NickName)
 	user.Email = strings.TrimSpace(user.Email)
+
+	if step == "register" {
+		hashPassword, err := security.Hash(user.Password)
+		if err != nil {
+			return err
+		}
+
+		user.Password = string(hashPassword)
+	}
+
+	return nil
 }
