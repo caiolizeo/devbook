@@ -125,3 +125,20 @@ func (repo users) Update(id uint64, user models.User) error {
 	}
 	return nil
 }
+
+func (repo users) Delete(id uint64) error {
+	statement, err := repo.db.Prepare(`
+	  DELETE FROM users
+	  WHERE id = ?`,
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(id); err != nil {
+		return err
+	}
+
+	return nil
+}
