@@ -73,7 +73,6 @@ func (repo users) Find(nameOrNickname string) ([]models.User, error) {
 }
 
 func (repo users) FindByID(id uint64) (models.User, error) {
-
 	line, err := repo.db.Query(`
 		SELECT id, name, nickname, email, createdAt
 		FROM users
@@ -141,4 +140,27 @@ func (repo users) Delete(id uint64) error {
 	}
 
 	return nil
+}
+
+func (repo users) FindByEmail(email string) (models.User, error) {
+	line, err := repo.db.Query(`
+		SELECT id, password
+		FROM users
+		WHERE email = ?`,
+		email,
+	)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer line.Close()
+
+	var user models.User
+
+	if line.Next() {
+		if err = line.Scan(&user.Id, &user.Password); err != nil {
+			return models.User{}, err
+		}
+	}
+
+	return user, nil
 }
