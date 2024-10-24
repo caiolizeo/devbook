@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api/src/authentication"
 	"api/src/database"
 	"api/src/models"
 	"api/src/repositories"
@@ -109,8 +110,22 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resquestBody, err := io.ReadAll(r.Body)
+	userIdInToken, err := authentication.GetUserId(r)
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, err)
+		return
+	}
 
+	if userID != userIdInToken {
+		responses.Error(w, http.StatusForbidden, errors.New("it is not possible to update this user"))
+		return
+	}
+
+	resquestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		responses.Error(w, http.StatusUnprocessableEntity, err)
+		return
+	}
 	var user models.User
 
 	if err = json.Unmarshal(resquestBody, &user); err != nil {
