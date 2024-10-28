@@ -164,3 +164,108 @@ func (repo users) FindByEmail(email string) (models.User, error) {
 
 	return user, nil
 }
+
+func (repo users) Follow(userID, followerID uint64) error {
+	statement, err := repo.db.Prepare(`
+		INSERT IGNORE INTO followers (user_id, follower_id)
+		VALUES (?, ?)`,
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(userID, followerID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo users) Unfollow(userID, followerID uint64) error {
+	statement, err := repo.db.Prepare(`
+		DELETE FROM followers
+		WHERE user_id = ?
+		AND follower_id = ?`,
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(userID, followerID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo users) Followers(userID uint64) ([]models.User, error) {
+	lines, err := repo.db.Query(`
+		SELECT users.id, users.name, users.nickname, users.email, users.createdAt
+		FROM users
+		INNER JOIN followers ON followers.follower_id = users.id
+		WHERE followers.user_id = ?`,
+		userID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer lines.Close()
+
+	var users []models.User
+
+	for lines.Next() {
+		var user models.User
+
+		if err = lines.Scan(
+			&user.Id,
+			&user.Name,
+			&user.NickName,
+			&user.Email,
+			&user.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+func (repo users) Following(userID uint64) ([]models.User, error) {
+	lines, err := repo.db.Query(`
+		SELECT users.id, users.name, users.nickname, users.email, users.createdAt
+		FROM users
+		INNER JOIN followers ON followers.user_id = users.id
+		WHERE followers.follower_id = ?`,
+		userID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer lines.Close()
+
+	var users []models.User
+
+	for lines.Next() {
+		var user models.User
+
+		if err = lines.Scan(
+			&user.Id,
+			&user.Name,
+			&user.NickName,
+			&user.Email,
+			&user.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
