@@ -31,6 +31,12 @@ var UserRoutes = []Route{
 		RequireAuthentication: true,
 	},
 	{
+		Uri:                   "/users/{id}/password",
+		Method:                http.MethodPost,
+		Function:              controllers.UpdatePassword,
+		RequireAuthentication: true,
+	},
+	{
 		Uri:                   "/users/{id}",
 		Method:                http.MethodDelete,
 		Function:              controllers.DeleteUser,
@@ -52,12 +58,12 @@ var UserRoutes = []Route{
 		Uri:                   "/users/{id}/followers",
 		Method:                http.MethodGet,
 		Function:              controllers.Followers,
-		RequireAuthentication: false,
+		RequireAuthentication: true,
 	},
 	{
 		Uri:                   "/users/{id}/following",
 		Method:                http.MethodGet,
 		Function:              controllers.Following,
-		RequireAuthentication: false,
+		RequireAuthentication: true,
 	},
 }
